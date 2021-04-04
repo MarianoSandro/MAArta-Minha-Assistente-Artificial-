@@ -14,7 +14,7 @@ import pyttsx3 #to play audio
 import subprocess # to open programs
 
 class pessoa:
-    nome = 'Sandro'
+    nome = ''
     def setNome(self, nome):
         self.nome = nome
 
@@ -35,7 +35,7 @@ def gravarVoz(fala=False):
         try:
             textoDito = r.recognize_google(audio, language='pt-BR')  # convert audio to text
         except sr.UnknownValueError: # error: recognizer does not understand
-            speak('Desculpe, não entendi')
+            speak('')
         except sr.RequestError:
             speak('Desculpe, o serviço está fora do ar') # error: recognizer is not connected
         print(f">> {textoDito.lower()}") # print what user said
@@ -60,81 +60,104 @@ def speak(audio_string):
 def respond(textoDito):
     # 1: greeting
     if there_exists(['oi','e aí','olá','fala','salve','saudações']):
-        cumprimentos = [f"Olá, {pessoa_obj.nome}, como posso ajudá-lo?", f"E aí, {pessoa_obj.nome}, beleza?", f"Estou ouvindo {pessoa_obj.nome}", f"Posso ajudar, {pessoa_obj.nome}?", f"Oi, {pessoa_obj.nome}!"]
+        cumprimentos = [f"Olá, {pessoa_obj.nome}, como posso ajudá-lo?", f"Estou ouvindo {pessoa_obj.nome}", f"Posso ajudar, {pessoa_obj.nome}?", f"Oi, {pessoa_obj.nome}!"]
         cumprimento = cumprimentos[random.randint(0,len(cumprimentos)-1)]
-        speak(cumprimento)
+        if pessoa_obj.nome:
+            speak(cumprimento)
+        else:
+            speak("Olá, qual o seu nome?")
 
     # 2: nome
     if there_exists(["nome"]) and (there_exists(["qual"]) or there_exists(["diga"]) or there_exists(["fala", "fale"])):
         if pessoa_obj.nome:
-            speak("meu nome é Marta")
+            speak("Meu nome é Marta")
         else:
-            speak("my nome is Marta. what's your nome?")
+            speak("Meu nome é Marta. Qual o seu?")
 
-    if there_exists(["my nome is"]):
-        pessoa_nome = textoDito.split("is",1)[-1].strip()
-        speak(f"okay, i will remember that {pessoa_nome}")
-        pessoa_obj.setNome(pessoa_nome) # remember nome in pessoa object
+    if there_exists(["meu nome é", "me chame de"]):
+        pessoaNome = textoDito.split("é",1)[-1].strip()
+        speak(f"Prazer em conhecê-lo, {pessoaNome}")
+        pessoa_obj.setNome(pessoaNome) # remember nome in pessoa object
 
-    # 3: greeting
-    if there_exists(["how are you","how are you doing"]):
-        speak(f"I'm very well, thanks for asking {pessoa_obj.nome}")
+    # 3: saudações
+    if there_exists(["tudo bem","como vai"]):
+        speak(f"Estou funcionando bem, obrigado por perguntar!")
 
-    # 4: time
+    # 4: agradecimento
+    if there_exists(["obrigado", "valeu"]):
+        agradecimentos = [f"Estou aqui para ajudar!", f"Por nada, {pessoa_obj.nome}!", f"Me chame se precisar de algo mais."]
+        agradecimento = agradecimentos[random.randint(0,len(agradecimentos)-1)]
+        speak(agradecimento)
+
+    # 5: horário
     if there_exists(["horas","horário","hora"]):
         fusoBr =  pytz.timezone('Brazil/East')
         horario = datetime.now(fusoBr)
         hora = horario.strftime("%H")
-        print(hora)
+        if hora[:1] == "0":
+             hora = hora.replace('0', '', 1)
         if hora == "12":
             hora = 'meio dia'
-        elif hora == "00":
+        elif hora == "0":
             hora = "meia noite"
+        elif hora == "1":
+            hora = "uma"
+        elif hora == "2":
+            hora = "duas"
         minutos = horario.strftime("%M")
+        minutos.replace('0', '', 1)
         time = f'Agora são {hora} e {minutos}'
         speak(time)
-
-    # 5: pesquisar duckduckgo
-    if there_exists(["pesquisar"]) and 'youtube' not in textoDito:
-        pesquisar_termo = textoDito.split("for",1)[-1]
-        url = f"https://duckduckgo.com/?q={pesquisar_termo}"
-        webbrowser.get().open(url)
-        speak(f'Here is what we found {pesquisar_termo} on duckduckgo')
-
+    
     # 6: pesquisar youtube
-    if there_exists(["youtube"]):
-        pesquisar_termo = textoDito.split("youtube ",1)[-1]
-        print(pesquisar_termo)
-        url = f"https://www.youtube.com/results?search_query={pesquisar_termo}"
+    if there_exists(["youtube", "vídeo"]):
+        pesquisarTermo = textoDito.split("youtube ",1)[-1]
+        pesquisarTermo = textoDito.split("vídeo ",1)[-1]
+        print(pesquisarTermo)
+        url = f"https://www.youtube.com/results?search_query={pesquisarTermo}"
         webbrowser.get().open(url)
-        speak(f'Here is what we found for {pesquisar_termo} on youtube')
+        speak(f'Aqui está o que achamos no youtube')
         
     # 7: pesquisar spotify
     if there_exists(["ouvir", "música", "spotify", "toca"]):
-        pesquisar_termo = textoDito.split(" ", 1)[-1]
-        pesquisar_termo = ''.join(pesquisar_termo)
-        url=f"https://open.spotify.com/search/{pesquisar_termo}"
+        pesquisarTermo = textoDito.split(" ", 1)[-1]
+        pesquisarTermo = ''.join(pesquisarTermo)
+        url=f"https://open.spotify.com/search/{pesquisarTermo}"
         webbrowser.get().open(url)
-        speak(f'Aqui está o que encontrei no Spotify')
+        speak(f'Você pode ouvir no Spotify')
 
-    # 8: definition wikipedia
-    if there_exists(["definição"]) or there_exists(["wikipedia"]):
-        pesquisar_termo = textoDito.split("de", 1)[-1]
-        url=f"https://en.wikipedia.org/wiki/{pesquisar_termo}"
+    # 8: definição wikipedia
+    if there_exists(["definição", "wikipédia", "significado", "significa", "o que é", "o que são"]):
+        pesquisarTermo = textoDito.split(" ")[-1]
+        url=f"https://pt.wikipedia.org/wiki/{pesquisarTermo}"
         webbrowser.get().open(url)
-        speak(f'Aqui está a página de {pesquisar_termo} na wikipédia')
+        speak(f'Aqui está o {pesquisarTermo} na wikipédia')
 
-    # 9: abrir programa
+    # 9: pesquisar duckduckgo
+    if there_exists(["pesquisar", "pesquise", "pesquisa", "procure", "procura"]) and 'youtube' not in textoDito:
+        pesquisarTermo = textoDito.split("aí ",1)[-1]
+        url = f"https://duckduckgo.com/?q={pesquisarTermo}"
+        webbrowser.get().open(url)
+        speak(f'Pesquisando {pesquisarTermo} no duckduckgo')
+
+    # 10: abrir programa
     if there_exists(["abrir", "programa", "aplicativo", "abre", "abra"]):
-        pesquisar_termo = textoDito.split(" ")[-1]
+        pesquisarTermo = textoDito.split(" ")[-1]
         caminho = r"C:\Users\Sandro\Desktop"
-        print(caminho + "/" +pesquisar_termo + ".lnk")
-        subprocess.run(caminho + "/" +pesquisar_termo + ".lnk")
-        speak(f'Abrindo {pesquisar_termo}')
+        print(caminho + "/" +pesquisarTermo + ".lnk")
+        subprocess.run(caminho + "/" +pesquisarTermo + ".lnk")
+        speak(f'Abrindo {pesquisarTermo}')
+
+    # 11: previsão do tempo
+    if there_exists(["tempo"]):
+        pesquisarTermo = textoDito.split("for")[-1]
+        url = "https://www.google.com/search?sxsrf=ACYBGNSQwMLDByBwdVFIUCbQqya-ET7AAA%3A1578847393212&ei=oUwbXtbXDN-C4-EP-5u82AE&q=weather&oq=weather&gs_l=psy-ab.3..35i39i285i70i256j0i67l4j0i131i67j0i131j0i67l2j0.1630.4591..5475...1.2..2.322.1659.9j5j0j1......0....1..gws-wiz.....10..0i71j35i39j35i362i39._5eSPD47bv8&ved=0ahUKEwiWrJvwwP7mAhVfwTgGHfsNDxsQ4dUDCAs&uact=5"
+        webbrowser.get().open(url)
+        speak("Aqui estão alguns dados do google")
         
-    # 10: get stock price
-    if there_exists(["preço do"]):
-        pesquisar_termo = textoDito.lower().split(" do ")[-1].strip() #strip removes whitespace after/before a termo in string
+    # 12: preço de ações
+    if there_exists(["preço do", "tá quanto o"]):
+        pesquisarTermo = textoDito.lower().split(" o ")[-1].strip() #strip removes whitespace after/before a termo in string
         stocks = {
             "apple":"AAPL",
             "microsoft":"MSFT",
@@ -143,19 +166,37 @@ def respond(textoDito):
             "bitcoin":"BTC-USD"
         }
         try:
-            stock = stocks[pesquisar_termo]
+            stock = stocks[pesquisarTermo]
             stock = yf.Ticker(stock)
             price = stock.info["regularMarketPrice"]
 
-            speak(f'price of {pesquisar_termo} is {price} {stock.info["currency"]} {pessoa_obj.nome}')
+            speak(f'O preço do {pesquisarTermo} está {price} {stock.info["currency"]} {pessoa_obj.nome}')
         except:
-            speak('oops, something went wrong')
-    if there_exists(["exit", "quit", "goodbye"]):
-        speak("going offline")
+            speak('ops, algo deu errado')
+    if there_exists(["fechar", "sair", "tchau"]):
+        speak(f'Estou desligando, até mais, {pessoa_obj.nome}')
         exit()
 
+    # 13: distância google maps
+    if there_exists(["distância"]):
+        pesquisarTermo1 = (textoDito.split("entre ",1)[-1]).split("e ",1)[0]
+        pesquisarTermo2 = textoDito.split(" e ",1)[-1]
+        url = f"https://www.google.com/maps/dir/{pesquisarTermo1}/{pesquisarTermo2}"
+        webbrowser.get().open(url)
+        speak(f'Vamos ver o que diz o google maps...')
+    
+    # mercado livre
 
-time.sleep(1)
+    # alarme
+
+    # tradução
+
+    # wolfram alpha
+
+    # noticias
+
+    # tradutor
+    
 
 pessoa_obj = pessoa()
 while(1):
